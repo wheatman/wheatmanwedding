@@ -1,12 +1,10 @@
-```html
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
-
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>Brian &amp; Marissa</title>
 
     <style>
@@ -21,15 +19,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-
             color: #fff;
 
             background:
                 linear-gradient(rgba(0, 0, 0, 0.45),
                     rgba(0, 0, 0, 0.45)),
-                url("img/wedding.jpg");
+                url("img/password-background.jpg");
 
             background-position: center;
             background-repeat: no-repeat;
@@ -40,54 +36,41 @@
             width: 90%;
             max-width: 400px;
             padding: 40px;
-
             text-align: center;
-
             background: rgba(0, 0, 0, 0.65);
             border-radius: 5px;
         }
 
         h1 {
             margin: 0 0 10px;
-
             font-size: 36px;
             font-weight: 300;
         }
 
         p {
             margin: 0 0 25px;
-
             font-size: 16px;
         }
 
         input {
             width: 100%;
             box-sizing: border-box;
-
             padding: 12px 15px;
             margin-bottom: 12px;
-
             font-size: 16px;
-
             border: none;
             border-radius: 3px;
         }
 
         button {
             width: 100%;
-
             padding: 12px 15px;
-
             font-size: 16px;
-
             color: #fff;
             background: #333;
-
             border: 1px solid #fff;
             border-radius: 3px;
-
             cursor: pointer;
-
             transition: background 0.2s ease-in-out;
         }
 
@@ -98,7 +81,6 @@
         #error {
             min-height: 20px;
             margin-top: 15px;
-
             font-size: 14px;
             color: #ffaaaa;
         }
@@ -107,81 +89,459 @@
 </head>
 
 <body>
-
     <div class="password-box">
-
         <h1>Brian &amp; Marissa</h1>
-
         <p>Enter the password to visit our wedding website.</p>
 
         <form id="password-form">
-
             <input type="password" id="password" placeholder="Password" autocomplete="off" autofocus>
 
             <button type="submit">
                 Enter
             </button>
-
         </form>
 
         <div id="error"></div>
-
     </div>
 
-
     <script>
+        const PBKDF2_ITERATIONS = 600000;
 
-        // SHA-256 hash of the correct password.
-        // Replace this with the hash of your actual password.
-        const PASSWORD_HASH =
-            "d5af65e13d51f724eb0db7774588c66b8ea0673b012fa82642f0c823a3695062";
+        function base64ToBytes(base64) {
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
 
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
 
-        async function hashPassword(password) {
-
-            const data = new TextEncoder().encode(password);
-
-            const hashBuffer =
-                await crypto.subtle.digest("SHA-256", data);
-
-            const hashArray =
-                Array.from(new Uint8Array(hashBuffer));
-
-            return hashArray
-                .map(byte => byte.toString(16).padStart(2, "0"))
-                .join("");
-
+            return bytes;
         }
 
+        async function deriveKey(password, salt, iterations) {
+            const passwordBytes =
+                new TextEncoder().encode(password);
+
+            const keyMaterial =
+                await crypto.subtle.importKey(
+                    "raw",
+                    passwordBytes,
+                    "PBKDF2",
+                    false,
+                    ["deriveKey"]
+                );
+
+            return crypto.subtle.deriveKey(
+                {
+                    name: "PBKDF2",
+                    salt: salt,
+                    iterations: iterations,
+                    hash: "SHA-256"
+                },
+                keyMaterial,
+                {
+                    name: "AES-GCM",
+                    length: 256
+                },
+                false,
+                ["decrypt"]
+            );
+        }
+
+        async function decryptFile(file, key) {
+            const nonce = base64ToBytes(file.nonce);
+            const ciphertext = base64ToBytes(file.ciphertext);
+
+            const plaintext = await crypto.subtle.decrypt(
+                {
+                    name: "AES-GCM",
+                    iv: nonce
+                },
+                key,
+                ciphertext
+            );
+
+            return new Uint8Array(plaintext);
+        }
+
+        function normalizePath(path) {
+            const parts = [];
+
+            for (const part of path.split("/")) {
+                if (!part || part === ".") {
+                    continue;
+                }
+
+                if (part === "..") {
+                    parts.pop();
+                } else {
+                    parts.push(part);
+                }
+            }
+
+            return parts.join("/");
+        }
+
+        function resolvePath(basePath, relativePath) {
+            /*
+             * Convert:
+             *
+             *   css/wedding.css + ../img/wedding.jpg
+             *
+             * into:
+             *
+             *   img/wedding.jpg
+             */
+
+            if (
+                relativePath.startsWith("data:") ||
+                relativePath.startsWith("blob:") ||
+                relativePath.startsWith("http:") ||
+                relativePath.startsWith("https:") ||
+                relativePath.startsWith("//") ||
+                relativePath.startsWith("#") ||
+                relativePath.startsWith("mailto:")
+            ) {
+                return null;
+            }
+
+            const baseDirectory =
+                basePath.substring(
+                    0,
+                    basePath.lastIndexOf("/") + 1
+                );
+
+            return normalizePath(
+                baseDirectory + relativePath
+            );
+        }
+
+        function replaceCssUrls(css, cssPath, blobUrls) {
+            return css.replace(
+                /url\(\s*(['"]?)([^'")]+)\1\s*\)/gi,
+                function (match, quote, url) {
+                    const resolved =
+                        resolvePath(cssPath, url.trim());
+
+                    if (resolved && blobUrls[resolved]) {
+                        return "url('" + blobUrls[resolved] + "')";
+                    }
+
+                    return match;
+                }
+            );
+        }
+
+        function rewriteHtmlReferences(
+            document,
+            htmlPath,
+            blobUrls
+        ) {
+            /*
+             * Rewrite normal HTML references:
+             *
+             *   img src="img/foo.jpg"
+             *   link href="css/wedding.css"
+             *   script src="js/foo.js"
+             *
+             * to their decrypted Blob URLs.
+             */
+
+            for (const element of document.querySelectorAll(
+                "[src], [href]"
+            )) {
+                for (const attribute of ["src", "href"]) {
+                    if (!element.hasAttribute(attribute)) {
+                        continue;
+                    }
+
+                    const original =
+                        element.getAttribute(attribute);
+
+                    const resolved =
+                        resolvePath(htmlPath, original);
+
+                    if (resolved && blobUrls[resolved]) {
+                        element.setAttribute(
+                            attribute,
+                            blobUrls[resolved]
+                        );
+                    }
+                }
+            }
+
+            /*
+             * Rewrite inline <style> blocks.
+             */
+
+            for (const style of document.querySelectorAll("style")) {
+                style.textContent =
+                    replaceCssUrls(
+                        style.textContent,
+                        htmlPath,
+                        blobUrls
+                    );
+            }
+        }
+
+        async function loadWeddingSite(password) {
+            const response =
+                await fetch("encrypted-site.json", {
+                    cache: "no-store"
+                });
+
+            if (!response.ok) {
+                throw new Error(
+                    "Could not load encrypted-site.json"
+                );
+            }
+
+            const site = await response.json();
+
+            if (!site.files ||
+                !site.files["wedding.html"]) {
+                throw new Error(
+                    "encrypted-site.json does not contain wedding.html"
+                );
+            }
+
+            const salt =
+                base64ToBytes(site.salt);
+
+            const key =
+                await deriveKey(
+                    password,
+                    salt,
+                    site.iterations || PBKDF2_ITERATIONS
+                );
+
+            /*
+             * Decrypt every file and create a Blob URL.
+             */
+
+            const blobUrls = {};
+
+            for (const [path, file] of
+                Object.entries(site.files)) {
+
+                const data =
+                    await decryptFile(file, key);
+
+                const blob =
+                    new Blob(
+                        [data],
+                        {
+                            type:
+                                file.mime ||
+                                "application/octet-stream"
+                        }
+                    );
+
+                blobUrls[path] =
+                    URL.createObjectURL(blob);
+            }
+
+            /*
+             * Get the decrypted wedding HTML.
+             */
+
+            const weddingHtmlBytes =
+                await decryptFile(
+                    site.files["wedding.html"],
+                    key
+                );
+
+            const weddingHtml =
+                new TextDecoder().decode(
+                    weddingHtmlBytes
+                );
+
+            /*
+             * Parse the HTML separately before replacing
+             * the current document.
+             */
+
+            const parser =
+                new DOMParser();
+
+            const weddingDocument =
+                parser.parseFromString(
+                    weddingHtml,
+                    "text/html"
+                );
+
+            /*
+             * Rewrite HTML references to decrypted files.
+             */
+
+            rewriteHtmlReferences(
+                weddingDocument,
+                "wedding.html",
+                blobUrls
+            );
+
+            /*
+             * CSS files need their own relative-path base.
+             *
+             * For example:
+             *
+             * css/wedding.css
+             *     url("../img/wedding.jpg")
+             *
+             * becomes the Blob URL for img/wedding.jpg.
+             */
+
+            for (const link of
+                weddingDocument.querySelectorAll(
+                    'link[rel="stylesheet"]'
+                )) {
+
+                const href =
+                    link.getAttribute("href");
+
+                /*
+                 * At this point href should already be a
+                 * Blob URL if it was one of our encrypted
+                 * files.
+                 *
+                 * Find the original encrypted path by
+                 * matching the Blob URL.
+                 */
+
+                const cssPath =
+                    Object.keys(blobUrls).find(
+                        path =>
+                            blobUrls[path] === href
+                    );
+
+                if (!cssPath ||
+                    !site.files[cssPath]) {
+                    continue;
+                }
+
+                const cssBytes =
+                    await decryptFile(
+                        site.files[cssPath],
+                        key
+                    );
+
+                const cssText =
+                    new TextDecoder().decode(
+                        cssBytes
+                    );
+
+                const rewrittenCss =
+                    replaceCssUrls(
+                        cssText,
+                        cssPath,
+                        blobUrls
+                    );
+
+                const cssBlob =
+                    new Blob(
+                        [rewrittenCss],
+                        {
+                            type: "text/css"
+                        }
+                    );
+
+                const newCssUrl =
+                    URL.createObjectURL(cssBlob);
+
+                link.setAttribute(
+                    "href",
+                    newCssUrl
+                );
+            }
+
+            /*
+             * Replace the current document with the
+             * decrypted wedding document.
+             */
+
+            document.open();
+
+            document.write(
+                "<!DOCTYPE html>" +
+                weddingDocument.documentElement.outerHTML
+            );
+
+            document.close();
+
+            /*
+             * Scripts inserted through document.write /
+             * innerHTML do not execute automatically.
+             *
+             * Recreate every script element so that the
+             * wedding site's JavaScript runs.
+             */
+
+            const scripts =
+                Array.from(
+                    document.querySelectorAll("script")
+                );
+
+            for (const oldScript of scripts) {
+                const newScript =
+                    document.createElement("script");
+
+                for (const attribute of
+                    oldScript.attributes) {
+                    newScript.setAttribute(
+                        attribute.name,
+                        attribute.value
+                    );
+                }
+
+                if (oldScript.src) {
+                    /*
+                     * The src was already rewritten to a
+                     * Blob URL.
+                     */
+                    newScript.src = oldScript.src;
+                } else {
+                    newScript.textContent =
+                        oldScript.textContent;
+                }
+
+                oldScript.parentNode.replaceChild(
+                    newScript,
+                    oldScript
+                );
+            }
+        }
 
         document
             .getElementById("password-form")
-            .addEventListener("submit", async function (event) {
+            .addEventListener(
+                "submit",
+                async function (event) {
+                    event.preventDefault();
 
-                event.preventDefault();
+                    const password =
+                        document.getElementById(
+                            "password"
+                        ).value;
 
-                const password =
-                    document.getElementById("password").value;
+                    const error =
+                        document.getElementById(
+                            "error"
+                        );
 
-                const hash =
-                    await hashPassword(password);
+                    error.textContent = "";
 
-                if (hash === PASSWORD_HASH) {
+                    try {
+                        await loadWeddingSite(password);
+                    } catch (e) {
+                        console.error(e);
 
-                    window.location.href = "wedding.html";
-
-                } else {
-
-                    document.getElementById("error").textContent =
-                        "Incorrect password.";
-
+                        error.textContent =
+                            "Incorrect password.";
+                    }
                 }
-
-            });
-
+            );
     </script>
 
 </body>
 
 </html>
-```
