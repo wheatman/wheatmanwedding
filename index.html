@@ -1,547 +1,547 @@
 <!DOCTYPE html>
-
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111111">
     <title>Brian &amp; Marissa</title>
-
     <style>
+        :root {
+            color-scheme: dark;
+            font-family: Georgia, "Times New Roman", serif;
+            background: #111;
+            color: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         html,
         body {
             width: 100%;
-            height: 100%;
+            min-height: 100%;
             margin: 0;
         }
 
         body {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            color: #fff;
-
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
             background:
-                linear-gradient(rgba(0, 0, 0, 0.45),
-                    rgba(0, 0, 0, 0.45)),
-                url("img/password-background.jpg");
-
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: cover;
+                linear-gradient(rgba(0, 0, 0, .52), rgba(0, 0, 0, .68)),
+                url("img/password-background.jpg") center center / cover no-repeat fixed,
+                #111;
         }
 
-        .password-box {
-            width: 90%;
-            max-width: 400px;
-            padding: 40px;
+        .login-panel {
+            width: min(100%, 440px);
+            padding: 38px 34px;
             text-align: center;
-            background: rgba(0, 0, 0, 0.65);
-            border-radius: 5px;
+            background: rgba(0, 0, 0, .74);
+            border: 1px solid rgba(255, 255, 255, .22);
+            box-shadow: 0 12px 42px rgba(0, 0, 0, .35);
         }
 
         h1 {
             margin: 0 0 10px;
-            font-size: 36px;
-            font-weight: 300;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(2.1rem, 7vw, 3rem);
+            font-weight: 400;
+            letter-spacing: .02em;
         }
 
-        p {
-            margin: 0 0 25px;
-            font-size: 16px;
+        .intro {
+            margin: 0 0 28px;
+            color: rgba(255, 255, 255, .88);
+            line-height: 1.55;
+        }
+
+        .step[hidden] {
+            display: none;
+        }
+
+        label {
+            display: block;
+            margin: 0 0 8px;
+            text-align: left;
+            font-family: Arial, sans-serif;
+            font-size: .82rem;
+            letter-spacing: .08em;
+            text-transform: uppercase;
         }
 
         input {
+            display: block;
             width: 100%;
-            box-sizing: border-box;
-            padding: 12px 15px;
-            margin-bottom: 12px;
-            font-size: 16px;
-            border: none;
-            border-radius: 3px;
+            min-height: 46px;
+            margin: 0 0 16px;
+            padding: 11px 13px;
+            border: 1px solid rgba(255, 255, 255, .55);
+            border-radius: 0;
+            outline: none;
+            background: rgba(255, 255, 255, .96);
+            color: #171717;
+            font: 16px Arial, sans-serif;
+        }
+
+        input:focus {
+            border-color: #fff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, .22);
         }
 
         button {
             width: 100%;
-            padding: 12px 15px;
-            font-size: 16px;
-            color: #fff;
-            background: #333;
+            min-height: 46px;
             border: 1px solid #fff;
-            border-radius: 3px;
+            border-radius: 0;
+            background: #fff;
+            color: #111;
             cursor: pointer;
-            transition: background 0.2s ease-in-out;
+            font: 700 .82rem Arial, sans-serif;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            transition: background .15s ease, color .15s ease;
         }
 
         button:hover {
-            background: #555;
+            background: transparent;
+            color: #fff;
         }
 
-        #error {
-            min-height: 20px;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #ffaaaa;
+        button:disabled {
+            cursor: wait;
+            opacity: .65;
+        }
+
+        .message {
+            min-height: 1.5em;
+            margin: 15px 0 0;
+            color: #f0d6d6;
+            font: .9rem/1.45 Arial, sans-serif;
+        }
+
+        .message.success {
+            color: #e6eadf;
+        }
+
+        #wedding-site {
+            display: none;
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #000;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 16px;
+            }
+
+            .login-panel {
+                padding: 30px 22px;
+            }
         }
     </style>
-
 </head>
 
 <body>
-    <div class="password-box">
+    <main class="login-panel" id="login-panel">
         <h1>Brian &amp; Marissa</h1>
-        <p>Enter the password to visit our wedding website.</p>
+        <p class="intro">We’re looking forward to celebrating with you.</p>
 
-        <form id="password-form">
-            <input type="password" id="password" placeholder="Password" autocomplete="off" autofocus>
-
-            <button type="submit">
-                Enter
-            </button>
+        <form id="password-form" class="step" autocomplete="on">
+            <label for="site-password">Wedding website password</label>
+            <input id="site-password" name="password" type="password" autocomplete="current-password" required
+                autofocus>
+            <button id="password-button" type="submit">Continue</button>
         </form>
 
-        <div id="error"></div>
-    </div>
+        <form id="guest-form" class="step" hidden>
+            <label for="guest-name">Your name</label>
+            <input id="guest-name" name="guest" type="text" autocomplete="name" autocapitalize="words"
+                placeholder="Enter your name (Ex. John Smith)" required>
+            <button id="guest-button" type="submit">Enter</button>
+        </form>
+
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+    </main>
+
+    <iframe id="wedding-site" title="Brian and Marissa wedding website" referrerpolicy="no-referrer"></iframe>
 
     <script>
-        const PBKDF2_ITERATIONS = 600000;
+        "use strict";
 
-        function base64ToBytes(base64) {
-            const binary = atob(base64);
+        const passwordForm = document.getElementById("password-form");
+        const guestForm = document.getElementById("guest-form");
+        const passwordInput = document.getElementById("site-password");
+        const guestInput = document.getElementById("guest-name");
+        const passwordButton = document.getElementById("password-button");
+        const guestButton = document.getElementById("guest-button");
+        const message = document.getElementById("message");
+        const loginPanel = document.getElementById("login-panel");
+        const weddingFrame = document.getElementById("wedding-site");
+
+        let siteManifest = null;
+        let cryptoKey = null;
+        let guestRecords = null;
+
+        function setMessage(text, success = false) {
+            message.textContent = text;
+            message.classList.toggle("success", success);
+        }
+
+        function setBusy(button, busy, busyText) {
+            if (busy) {
+                button.dataset.originalText = button.textContent;
+                button.textContent = busyText;
+            } else if (button.dataset.originalText) {
+                button.textContent = button.dataset.originalText;
+                delete button.dataset.originalText;
+            }
+            button.disabled = busy;
+        }
+
+        function decodeBase64(value) {
+            const binary = atob(value);
             const bytes = new Uint8Array(binary.length);
-
             for (let i = 0; i < binary.length; i++) {
                 bytes[i] = binary.charCodeAt(i);
             }
-
             return bytes;
         }
 
-        async function deriveKey(password, salt, iterations) {
-            const passwordBytes =
-                new TextEncoder().encode(password);
-
-            const keyMaterial =
-                await crypto.subtle.importKey(
-                    "raw",
-                    passwordBytes,
-                    "PBKDF2",
-                    false,
-                    ["deriveKey"]
-                );
+        async function deriveKey(password, manifest) {
+            const salt = decodeBase64(manifest.salt);
+            const material = await crypto.subtle.importKey(
+                "raw",
+                new TextEncoder().encode(password),
+                "PBKDF2",
+                false,
+                ["deriveKey"]
+            );
 
             return crypto.subtle.deriveKey(
                 {
                     name: "PBKDF2",
-                    salt: salt,
-                    iterations: iterations,
+                    salt,
+                    iterations: manifest.iterations,
                     hash: "SHA-256"
                 },
-                keyMaterial,
-                {
-                    name: "AES-GCM",
-                    length: 256
-                },
+                material,
+                { name: "AES-GCM", length: 256 },
                 false,
                 ["decrypt"]
             );
         }
 
-        async function decryptFile(file, key) {
-            const nonce = base64ToBytes(file.nonce);
-            const ciphertext = base64ToBytes(file.ciphertext);
+        async function decryptEntry(path, key) {
+            const entry = siteManifest.files[path];
+            if (!entry) {
+                throw new Error("Missing encrypted file: " + path);
+            }
 
-            const plaintext = await crypto.subtle.decrypt(
-                {
-                    name: "AES-GCM",
-                    iv: nonce
-                },
+            const nonce = decodeBase64(entry.nonce);
+            const ciphertext = decodeBase64(entry.ciphertext);
+            return await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: nonce },
                 key,
                 ciphertext
             );
-
-            return new Uint8Array(plaintext);
         }
 
-        function normalizePath(path) {
-            const parts = [];
+        // RFC 4180-compatible enough for this guest list: quoted fields,
+        // commas inside quotes, escaped quotes, CRLF, and newlines in quotes.
+        function parseCsv(text) {
+            const rows = [];
+            let row = [];
+            let field = "";
+            let inQuotes = false;
 
-            for (const part of path.split("/")) {
-                if (!part || part === ".") {
-                    continue;
-                }
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
 
-                if (part === "..") {
-                    parts.pop();
-                } else {
-                    parts.push(part);
+                if (inQuotes) {
+                    if (ch === '"') {
+                        if (text[i + 1] === '"') {
+                            field += '"';
+                            i++;
+                        } else {
+                            inQuotes = false;
+                        }
+                    } else {
+                        field += ch;
+                    }
+                } else if (ch === '"') {
+                    inQuotes = true;
+                } else if (ch === ",") {
+                    row.push(field);
+                    field = "";
+                } else if (ch === "\n") {
+                    row.push(field);
+                    rows.push(row);
+                    row = [];
+                    field = "";
+                } else if (ch !== "\r") {
+                    field += ch;
                 }
             }
 
-            return parts.join("/");
+            if (field.length || row.length) {
+                row.push(field);
+                rows.push(row);
+            }
+
+            if (!rows.length) return [];
+
+            const headers = rows.shift().map(value => value.trim().toLowerCase());
+            const nameIndex = headers.indexOf("name");
+            if (nameIndex < 0) {
+                throw new Error('The guest CSV must have a "name" column.');
+            }
+
+            return rows
+                .filter(values => values.some(value => value.trim() !== ""))
+                .map(values => ({
+                    name: (values[nameIndex] || "").trim()
+                }))
+                .filter(guest => guest.name);
         }
 
-        function resolvePath(basePath, relativePath) {
-            /*
-             * Convert:
-             *
-             *   css/wedding.css + ../img/wedding.jpg
-             *
-             * into:
-             *
-             *   img/wedding.jpg
-             */
+        function normalizeGuestName(name) {
+            return name.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+        }
 
-            if (
-                relativePath.startsWith("data:") ||
-                relativePath.startsWith("blob:") ||
-                relativePath.startsWith("http:") ||
-                relativePath.startsWith("https:") ||
-                relativePath.startsWith("//") ||
-                relativePath.startsWith("#") ||
-                relativePath.startsWith("mailto:")
-            ) {
+        // Keep this in sync with make_slug() in encrypt.py.
+        function makeSlug(name) {
+            return name.normalize("NFKD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[^\x00-\x7F]/g, "")
+                .toLowerCase()
+                .trim()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+        }
+
+        function isExternalOrSpecialUrl(value) {
+            const trimmed = value.trim();
+            return !trimmed ||
+                trimmed.startsWith("#") ||
+                /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(trimmed);
+        }
+
+        function resolveEncryptedPath(rawUrl, sourcePath) {
+            if (isExternalOrSpecialUrl(rawUrl)) return null;
+
+            try {
+                const sourceDirectory = sourcePath.includes("/")
+                    ? sourcePath.slice(0, sourcePath.lastIndexOf("/") + 1)
+                    : "";
+                const resolved = new URL(rawUrl, "https://wedding.invalid/" + sourceDirectory);
+                if (resolved.origin !== "https://wedding.invalid") return null;
+
+                let path = decodeURIComponent(resolved.pathname.replace(/^\/+/, ""));
+                path = path.replace(/\\/g, "/");
+                return path;
+            } catch {
                 return null;
             }
-
-            const baseDirectory =
-                basePath.substring(
-                    0,
-                    basePath.lastIndexOf("/") + 1
-                );
-
-            return normalizePath(
-                baseDirectory + relativePath
-            );
         }
 
-        function replaceCssUrls(css, cssPath, blobUrls) {
-            return css.replace(
-                /url\(\s*(['"]?)([^'")]+)\1\s*\)/gi,
-                function (match, quote, url) {
-                    const resolved =
-                        resolvePath(cssPath, url.trim());
-
-                    if (resolved && blobUrls[resolved]) {
-                        return "url('" + blobUrls[resolved] + "')";
-                    }
-
-                    return match;
+        function rewriteCssUrls(cssText, cssPath, blobUrls) {
+            return cssText.replace(
+                /url\(\s*(?:(["'])(.*?)\1|([^)]*?))\s*\)/gi,
+                (whole, quote, quotedValue, bareValue) => {
+                    const raw = (quotedValue ?? bareValue ?? "").trim();
+                    const path = resolveEncryptedPath(raw, cssPath);
+                    if (!path || !blobUrls.has(path)) return whole;
+                    return 'url("' + blobUrls.get(path) + '")';
                 }
             );
         }
 
-        function rewriteHtmlReferences(
-            document,
-            htmlPath,
-            blobUrls
-        ) {
-            /*
-             * Rewrite normal HTML references:
-             *
-             *   img src="img/foo.jpg"
-             *   link href="css/wedding.css"
-             *   script src="js/foo.js"
-             *
-             * to their decrypted Blob URLs.
-             */
-
-            for (const element of document.querySelectorAll(
-                "[src], [href]"
-            )) {
-                for (const attribute of ["src", "href"]) {
-                    if (!element.hasAttribute(attribute)) {
-                        continue;
-                    }
-
-                    const original =
-                        element.getAttribute(attribute);
-
-                    const resolved =
-                        resolvePath(htmlPath, original);
-
-                    if (resolved && blobUrls[resolved]) {
-                        element.setAttribute(
-                            attribute,
-                            blobUrls[resolved]
-                        );
-                    }
-                }
-            }
-
-            /*
-             * Rewrite inline <style> blocks.
-             */
-
-            for (const style of document.querySelectorAll("style")) {
-                style.textContent =
-                    replaceCssUrls(
-                        style.textContent,
-                        htmlPath,
-                        blobUrls
-                    );
-            }
+        function rewriteSrcset(value, sourcePath, blobUrls) {
+            return value.split(",").map(candidate => {
+                const parts = candidate.trim().split(/\s+/, 2);
+                const path = resolveEncryptedPath(parts[0], sourcePath);
+                if (path && blobUrls.has(path)) parts[0] = blobUrls.get(path);
+                return parts.join(" ");
+            }).join(", ");
         }
 
-        async function loadWeddingSite(password) {
-            const response =
-                await fetch("encrypted-site.json", {
-                    cache: "no-store"
-                });
+        function rewriteHtmlReferences(htmlText, htmlPath, blobUrls) {
+            const parsed = new DOMParser().parseFromString(htmlText, "text/html");
 
-            if (!response.ok) {
-                throw new Error(
-                    "Could not load encrypted-site.json"
-                );
-            }
+            parsed.querySelectorAll("[src], [href], [poster], [srcset]").forEach(element => {
+                for (const attribute of ["src", "href", "poster"]) {
+                    if (!element.hasAttribute(attribute)) continue;
+                    const original = element.getAttribute(attribute);
+                    const path = resolveEncryptedPath(original, htmlPath);
+                    if (path && blobUrls.has(path)) {
+                        element.setAttribute(attribute, blobUrls.get(path));
+                    }
+                }
 
-            const site = await response.json();
-
-            if (!site.files ||
-                !site.files["wedding.html"]) {
-                throw new Error(
-                    "encrypted-site.json does not contain wedding.html"
-                );
-            }
-
-            const salt =
-                base64ToBytes(site.salt);
-
-            const key =
-                await deriveKey(
-                    password,
-                    salt,
-                    site.iterations || PBKDF2_ITERATIONS
-                );
-
-            /*
-             * Decrypt every file and create a Blob URL.
-             */
-
-            const blobUrls = {};
-
-            for (const [path, file] of
-                Object.entries(site.files)) {
-
-                const data =
-                    await decryptFile(file, key);
-
-                const blob =
-                    new Blob(
-                        [data],
-                        {
-                            type:
-                                file.mime ||
-                                "application/octet-stream"
-                        }
+                if (element.hasAttribute("srcset")) {
+                    element.setAttribute(
+                        "srcset",
+                        rewriteSrcset(element.getAttribute("srcset"), htmlPath, blobUrls)
                     );
+                }
+            });
 
-                blobUrls[path] =
-                    URL.createObjectURL(blob);
-            }
-
-            /*
-             * Get the decrypted wedding HTML.
-             */
-
-            const weddingHtmlBytes =
-                await decryptFile(
-                    site.files["wedding.html"],
-                    key
+            parsed.querySelectorAll("[style]").forEach(element => {
+                element.setAttribute(
+                    "style",
+                    rewriteCssUrls(element.getAttribute("style"), htmlPath, blobUrls)
                 );
+            });
 
-            const weddingHtml =
-                new TextDecoder().decode(
-                    weddingHtmlBytes
+            parsed.querySelectorAll("style").forEach(styleElement => {
+                styleElement.textContent = rewriteCssUrls(
+                    styleElement.textContent,
+                    htmlPath,
+                    blobUrls
                 );
+            });
 
-            /*
-             * Parse the HTML separately before replacing
-             * the current document.
-             */
+            return "<!doctype html>\n" + parsed.documentElement.outerHTML;
+        }
 
-            const parser =
-                new DOMParser();
+        async function buildBlobUrls(key) {
+            const blobUrls = new Map();
+            const cssFiles = [];
 
-            const weddingDocument =
-                parser.parseFromString(
-                    weddingHtml,
-                    "text/html"
-                );
-
-            /*
-             * Rewrite HTML references to decrypted files.
-             */
-
-            rewriteHtmlReferences(
-                weddingDocument,
-                "wedding.html",
-                blobUrls
-            );
-
-            /*
-             * CSS files need their own relative-path base.
-             *
-             * For example:
-             *
-             * css/wedding.css
-             *     url("../img/wedding.jpg")
-             *
-             * becomes the Blob URL for img/wedding.jpg.
-             */
-
-            for (const link of
-                weddingDocument.querySelectorAll(
-                    'link[rel="stylesheet"]'
-                )) {
-
-                const href =
-                    link.getAttribute("href");
-
-                /*
-                 * At this point href should already be a
-                 * Blob URL if it was one of our encrypted
-                 * files.
-                 *
-                 * Find the original encrypted path by
-                 * matching the Blob URL.
-                 */
-
-                const cssPath =
-                    Object.keys(blobUrls).find(
-                        path =>
-                            blobUrls[path] === href
-                    );
-
-                if (!cssPath ||
-                    !site.files[cssPath]) {
+            for (const path of Object.keys(siteManifest.files)) {
+                if (path === "guests.csv") continue;
+                if (
+                    path.startsWith(siteManifest.guest_page_prefix) &&
+                    path.endsWith(siteManifest.guest_page_suffix)
+                ) {
                     continue;
                 }
 
-                const cssBytes =
-                    await decryptFile(
-                        site.files[cssPath],
-                        key
-                    );
+                const entry = siteManifest.files[path];
+                const mime = entry.mime || entry.mime_type || "application/octet-stream";
+                const plaintext = await decryptEntry(path, key);
 
-                const cssText =
-                    new TextDecoder().decode(
-                        cssBytes
-                    );
-
-                const rewrittenCss =
-                    replaceCssUrls(
-                        cssText,
-                        cssPath,
-                        blobUrls
-                    );
-
-                const cssBlob =
-                    new Blob(
-                        [rewrittenCss],
-                        {
-                            type: "text/css"
-                        }
-                    );
-
-                const newCssUrl =
-                    URL.createObjectURL(cssBlob);
-
-                link.setAttribute(
-                    "href",
-                    newCssUrl
-                );
-            }
-
-            /*
-             * Replace the current document with the
-             * decrypted wedding document.
-             */
-
-            document.open();
-
-            document.write(
-                "<!DOCTYPE html>" +
-                weddingDocument.documentElement.outerHTML
-            );
-
-            document.close();
-
-            /*
-             * Scripts inserted through document.write /
-             * innerHTML do not execute automatically.
-             *
-             * Recreate every script element so that the
-             * wedding site's JavaScript runs.
-             */
-
-            const scripts =
-                Array.from(
-                    document.querySelectorAll("script")
-                );
-
-            for (const oldScript of scripts) {
-                const newScript =
-                    document.createElement("script");
-
-                for (const attribute of
-                    oldScript.attributes) {
-                    newScript.setAttribute(
-                        attribute.name,
-                        attribute.value
-                    );
-                }
-
-                if (oldScript.src) {
-                    /*
-                     * The src was already rewritten to a
-                     * Blob URL.
-                     */
-                    newScript.src = oldScript.src;
+                if (/\.css$/i.test(path) || mime.includes("text/css")) {
+                    cssFiles.push({ path, mime, plaintext });
                 } else {
-                    newScript.textContent =
-                        oldScript.textContent;
+                    blobUrls.set(path, URL.createObjectURL(new Blob([plaintext], { type: mime })));
                 }
-
-                oldScript.parentNode.replaceChild(
-                    newScript,
-                    oldScript
-                );
             }
+
+            // CSS is processed after images/fonts so its url(...) references can be
+            // replaced with the corresponding blob URLs.
+            for (const cssFile of cssFiles) {
+                const cssText = new TextDecoder().decode(cssFile.plaintext);
+                const rewritten = rewriteCssUrls(cssText, cssFile.path, blobUrls);
+                const blob = new Blob([rewritten], { type: cssFile.mime || "text/css" });
+                blobUrls.set(cssFile.path, URL.createObjectURL(blob));
+            }
+
+            return blobUrls;
         }
 
-        document
-            .getElementById("password-form")
-            .addEventListener(
-                "submit",
-                async function (event) {
-                    event.preventDefault();
+        async function loadManifest() {
+            const response = await fetch("encrypted-site.json", { cache: "no-store" });
+            if (!response.ok) {
+                throw new Error("Could not load encrypted-site.json (HTTP " + response.status + ").");
+            }
 
-                    const password =
-                        document.getElementById(
-                            "password"
-                        ).value;
+            const manifest = await response.json();
+            if (
+                manifest.version !== 3 ||
+                manifest.kdf !== "PBKDF2-SHA256" ||
+                !manifest.files ||
+                !manifest.guest_page_prefix ||
+                !manifest.guest_page_suffix
+            ) {
+                throw new Error("The encrypted-site.json format is not the expected version 3 format.");
+            }
+            return manifest;
+        }
 
-                    const error =
-                        document.getElementById(
-                            "error"
-                        );
+        passwordForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            setMessage("");
+            setBusy(passwordButton, true, "Checking…");
 
-                    error.textContent = "";
+            try {
+                siteManifest = await loadManifest();
+                cryptoKey = await deriveKey(passwordInput.value, siteManifest);
 
-                    try {
-                        await loadWeddingSite(password);
-                    } catch (e) {
-                        console.error(e);
+                const csvBuffer = await decryptEntry("guests.csv", cryptoKey);
+                const csvText = new TextDecoder("utf-8").decode(csvBuffer).replace(/^\uFEFF/, "");
+                guestRecords = parseCsv(csvText);
 
-                        error.textContent =
-                            "Incorrect password.";
-                    }
+                passwordForm.hidden = true;
+                guestForm.hidden = false;
+                setMessage("Password accepted. Enter the name shown on your invitation.", true);
+                guestInput.focus();
+            } catch (error) {
+                console.error(error);
+                setMessage(
+                    "We couldn’t verify that password. Please check it and try again."
+                );
+            } finally {
+                setBusy(passwordButton, false);
+            }
+        });
+
+        guestForm.addEventListener("submit", async event => {
+            event.preventDefault();
+            setMessage("");
+            setBusy(guestButton, true, "Opening…");
+
+            try {
+                const enteredName = normalizeGuestName(guestInput.value);
+                const guest = guestRecords.find(
+                    record => normalizeGuestName(record.name) === enteredName
+                );
+
+                if (!guest) {
+                    setMessage("We couldn’t find that name. Please check the spelling or contact us.");
+                    return;
                 }
-            );
-    </script>
 
+                const slug = makeSlug(guest.name);
+                if (!slug) {
+                    throw new Error("The guest name does not produce a valid page filename.");
+                }
+
+                const pagePath =
+                    siteManifest.guest_page_prefix + slug + siteManifest.guest_page_suffix;
+
+                const [pageBuffer, blobUrls] = await Promise.all([
+                    decryptEntry(pagePath, cryptoKey),
+                    buildBlobUrls(cryptoKey)
+                ]);
+
+                const pageHtml = new TextDecoder("utf-8").decode(pageBuffer);
+                const rewrittenHtml = rewriteHtmlReferences(pageHtml, pagePath, blobUrls);
+
+                weddingFrame.srcdoc = rewrittenHtml;
+                weddingFrame.style.display = "block";
+                loginPanel.style.display = "none";
+                document.body.style.display = "block";
+                document.body.style.padding = "0";
+                document.body.style.background = "#000";
+            } catch (error) {
+                console.error(error);
+                setMessage(
+                    "We couldn’t open your invitation. Please contact Brian or Marissa."
+                );
+            } finally {
+                setBusy(guestButton, false);
+            }
+        });
+    </script>
 </body>
 
 </html>
